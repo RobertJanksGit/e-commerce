@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { fetchProducts, Product } from "../services/api";
+import { fetchProducts, searchProducts, Product } from "../services/api";
 import {
   Container,
   Grid,
@@ -21,11 +21,18 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
+  const location = useLocation();
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const query = searchParams.get("q");
+
     const loadProducts = async () => {
       try {
-        const data = await fetchProducts();
+        setLoading(true);
+        const data = query
+          ? await searchProducts(query)
+          : await fetchProducts();
         setProducts(data);
         setError(null);
       } catch (error) {
@@ -37,7 +44,7 @@ const Home = () => {
     };
 
     loadProducts();
-  }, []);
+  }, [location.search]);
 
   if (loading) {
     return (
@@ -62,8 +69,21 @@ const Home = () => {
     );
   }
 
+  if (products.length === 0) {
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="info">No products found matching your search.</Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container sx={{ py: 4 }}>
+      {location.search && (
+        <Typography variant="h6" gutterBottom>
+          Search Results for: {new URLSearchParams(location.search).get("q")}
+        </Typography>
+      )}
       <Grid container spacing={4}>
         {products.map((product) => (
           <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
@@ -81,7 +101,7 @@ const Home = () => {
               <CardMedia
                 component="img"
                 sx={{
-                  pt: "56.25%", // 16:9 aspect ratio
+                  pt: "56.25%",
                   objectFit: "contain",
                   bgcolor: "white",
                 }}

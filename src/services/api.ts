@@ -66,3 +66,44 @@ export const fetchCategories = async (): Promise<string[]> => {
     throw error;
   }
 };
+
+export const searchProducts = async (query: string): Promise<Product[]> => {
+  try {
+    const products = await fetchProducts();
+    const searchTerm = query.toLowerCase().trim();
+
+    return products.filter(
+      (product) =>
+        product.title.toLowerCase().includes(searchTerm) ||
+        product.description.toLowerCase().includes(searchTerm) ||
+        product.category.toLowerCase().includes(searchTerm)
+    );
+  } catch (error) {
+    console.error("Error searching products:", error);
+    throw error;
+  }
+};
+
+export const getSearchSuggestions = async (
+  query: string
+): Promise<Product[]> => {
+  try {
+    const products = await fetchProducts();
+    const searchTerm = query.toLowerCase().trim();
+
+    if (!searchTerm) return [];
+
+    // Get matches from title, category, and description
+    return products
+      .filter(
+        (product) =>
+          product.title.toLowerCase().includes(searchTerm) ||
+          product.category.toLowerCase().includes(searchTerm) ||
+          product.description.toLowerCase().includes(searchTerm)
+      )
+      .slice(0, 5); // Limit to 5 suggestions
+  } catch (error) {
+    console.error("Error getting search suggestions:", error);
+    return [];
+  }
+};
