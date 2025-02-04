@@ -122,9 +122,13 @@ const ProductFilters = ({ minPrice, maxPrice }: ProductFiltersProps) => {
   };
 
   return (
-    <Paper sx={{ p: 2, mb: 2 }}>
-      <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-        <FormControl size="small" sx={{ minWidth: 200 }}>
+    <Paper sx={{ p: 2 }}>
+      <Typography variant="h6" gutterBottom>
+        Filters
+      </Typography>
+
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <FormControl size="small">
           <InputLabel>Category</InputLabel>
           <Select
             value={filters.category}
@@ -140,7 +144,7 @@ const ProductFilters = ({ minPrice, maxPrice }: ProductFiltersProps) => {
           </Select>
         </FormControl>
 
-        <FormControl size="small" sx={{ minWidth: 200 }}>
+        <FormControl size="small">
           <InputLabel>Sort By</InputLabel>
           <Select
             value={filters.sort}
@@ -154,40 +158,45 @@ const ProductFilters = ({ minPrice, maxPrice }: ProductFiltersProps) => {
           </Select>
         </FormControl>
 
-        <Box sx={{ minWidth: 200, flex: 1 }}>
+        <Box>
           <Typography gutterBottom>Price Range</Typography>
-          <Box sx={{ px: 1 }}>
-            <Slider
-              value={sliderValue}
-              onChange={handlePriceChange}
-              onChangeCommitted={handlePriceChangeCommitted}
-              valueLabelDisplay="auto"
-              min={minPrice}
-              max={maxPrice}
-              step={1}
+          <Slider
+            value={sliderValue}
+            onChange={handlePriceChange}
+            onChangeCommitted={handlePriceChangeCommitted}
+            valueLabelDisplay="auto"
+            min={minPrice}
+            max={maxPrice}
+            step={1}
+          />
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              mt: 1,
+              gap: 1,
+            }}
+          >
+            <TextField
+              fullWidth
+              size="small"
+              label="Min"
+              value={sliderValue[0]}
+              InputProps={{
+                readOnly: true,
+                startAdornment: <Typography>$</Typography>,
+              }}
             />
-            <Box
-              sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}
-            >
-              <TextField
-                size="small"
-                label="Min"
-                value={sliderValue[0]}
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: <Typography>$</Typography>,
-                }}
-              />
-              <TextField
-                size="small"
-                label="Max"
-                value={sliderValue[1]}
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: <Typography>$</Typography>,
-                }}
-              />
-            </Box>
+            <TextField
+              fullWidth
+              size="small"
+              label="Max"
+              value={sliderValue[1]}
+              InputProps={{
+                readOnly: true,
+                startAdornment: <Typography>$</Typography>,
+              }}
+            />
           </Box>
         </Box>
       </Box>
