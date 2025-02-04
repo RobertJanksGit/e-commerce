@@ -1,105 +1,160 @@
+import { useCart } from "../context/CartContext";
 import {
   Container,
   Typography,
-  List,
-  ListItem,
-  ListItemText,
-  IconButton,
+  Card,
+  CardContent,
+  CardMedia,
   Button,
-  Divider,
+  IconButton,
   Box,
-  Paper,
+  Grid,
+  Divider,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
-import { useCart } from "../context/CartContext";
 
 const Cart = () => {
-  const {
-    items: cartItems,
-    removeItem,
-    updateQuantity,
-    getCartTotal,
-  } = useCart();
+  const { items, removeFromCart, updateQuantity, getTotal } = useCart();
+
+  if (items.length === 0) {
+    return (
+      <Container sx={{ py: 8 }}>
+        <Typography variant="h5" gutterBottom align="center">
+          Your cart is empty
+        </Typography>
+      </Container>
+    );
+  }
 
   return (
-    <Container maxWidth="md" sx={{ py: 8 }}>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Container sx={{ py: 4 }}>
+      <Typography variant="h4" gutterBottom>
         Shopping Cart
       </Typography>
-
-      <Paper elevation={3} sx={{ p: 2 }}>
-        {cartItems.length === 0 ? (
-          <Typography align="center" sx={{ py: 4 }}>
-            Your cart is empty
-          </Typography>
-        ) : (
-          <>
-            <List>
-              {cartItems.map((item, index) => (
-                <Box key={item.id}>
-                  <ListItem>
-                    <img
-                      src={item.imageUrl}
-                      alt={item.name}
-                      style={{ width: 50, height: 50, marginRight: 16 }}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={8}>
+          {items.map((item) => (
+            <Card key={item.id} sx={{ mb: 2 }}>
+              <CardContent>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={3}>
+                    <CardMedia
+                      component="img"
+                      sx={{
+                        width: "100%",
+                        height: 100,
+                        objectFit: "contain",
+                      }}
+                      image={item.image}
+                      alt={item.title}
                     />
-                    <ListItemText
-                      primary={item.name}
-                      secondary={`$${item.price.toFixed(2)}`}
-                    />
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  </Grid>
+                  <Grid item xs={5}>
+                    <Typography variant="h6" gutterBottom>
+                      {item.title}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {item.description}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={2}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
                       <IconButton
                         size="small"
-                        onClick={() => updateQuantity(item.id, -1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity - 1)
+                        }
                       >
                         <RemoveIcon />
                       </IconButton>
-                      <Typography>{item.quantity}</Typography>
+                      <Typography sx={{ mx: 1 }}>{item.quantity}</Typography>
                       <IconButton
                         size="small"
-                        onClick={() => updateQuantity(item.id, 1)}
+                        onClick={() =>
+                          updateQuantity(item.id, item.quantity + 1)
+                        }
                       >
                         <AddIcon />
                       </IconButton>
-                      <IconButton
-                        edge="end"
-                        onClick={() => removeItem(item.id)}
-                        sx={{ ml: 2 }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
                     </Box>
-                  </ListItem>
-                  {index < cartItems.length - 1 && <Divider />}
-                </Box>
-              ))}
-            </List>
-
-            <Box sx={{ mt: 4, p: 2, bgcolor: "background.default" }}>
+                  </Grid>
+                  <Grid item xs={1}>
+                    <Typography variant="subtitle1">
+                      ${(item.price * item.quantity).toFixed(2)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={1}>
+                    <IconButton
+                      color="error"
+                      onClick={() => removeFromCart(item.id)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          ))}
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
               <Typography variant="h6" gutterBottom>
                 Order Summary
               </Typography>
-              <Typography variant="h5" sx={{ mt: 2 }}>
-                Total: ${getCartTotal().toFixed(2)}
-              </Typography>
+              <Box sx={{ my: 2 }}>
+                <Grid container justifyContent="space-between">
+                  <Grid item>
+                    <Typography variant="subtitle1">Subtotal</Typography>
+                  </Grid>
+                  <Grid item>
+                    <Typography variant="subtitle1">
+                      ${getTotal().toFixed(2)}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ my: 2 }}>
+                <Grid container justifyContent="space-between">
+                  <Grid item>
+                    <Typography variant="h6">Total</Typography>
+                  </Grid>
+                  <Grid item>
+                    <Typography variant="h6">
+                      ${getTotal().toFixed(2)}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
               <Button
                 variant="contained"
-                size="large"
                 fullWidth
+                size="large"
                 sx={{ mt: 2 }}
                 onClick={() => {
-                  // Implement checkout logic
+                  // TODO: Implement checkout
                   alert("Checkout functionality coming soon!");
                 }}
               >
                 Proceed to Checkout
               </Button>
-            </Box>
-          </>
-        )}
-      </Paper>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
     </Container>
   );
 };

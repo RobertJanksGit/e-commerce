@@ -9,10 +9,12 @@ import {
   Button,
   Badge,
   IconButton,
+  CircularProgress,
+  Box,
 } from "@mui/material";
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const { getItemCount } = useCart();
 
   const handleLogout = async () => {
@@ -23,6 +25,16 @@ const Navbar = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <AppBar position="static">
+        <Toolbar>
+          <CircularProgress color="inherit" size={24} />
+        </Toolbar>
+      </AppBar>
+    );
+  }
+
   return (
     <AppBar position="static">
       <Toolbar sx={{ justifyContent: "space-between" }}>
@@ -32,7 +44,7 @@ const Navbar = () => {
           </Typography>
         </Link>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {user ? (
             <>
               <Typography variant="body1">
@@ -59,7 +71,7 @@ const Navbar = () => {
               </Link>
             </>
           )}
-        </div>
+        </Box>
       </Toolbar>
     </AppBar>
   );

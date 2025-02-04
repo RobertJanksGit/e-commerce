@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -8,23 +8,32 @@ import {
   Button,
   Typography,
   Box,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, error, clearError, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+    return () => clearError();
+  }, [user, navigate, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setIsSubmitting(true);
     try {
       await signIn(email, password);
       navigate("/");
     } catch (err) {
-      setError("Failed to login. Please check your credentials.");
+      setIsSubmitting(false);
     }
   };
 
@@ -36,9 +45,9 @@ const Login = () => {
             Login
           </Typography>
           {error && (
-            <Typography color="error" align="center" sx={{ mb: 2 }}>
+            <Alert severity="error" sx={{ mb: 2 }}>
               {error}
-            </Typography>
+            </Alert>
           )}
           <form onSubmit={handleSubmit}>
             <TextField
@@ -49,6 +58,7 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
+              disabled={isSubmitting}
             />
             <TextField
               fullWidth
@@ -58,14 +68,16 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
+              disabled={isSubmitting}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={isSubmitting}
             >
-              Sign In
+              {isSubmitting ? <CircularProgress size={24} /> : "Sign In"}
             </Button>
           </form>
           <Typography align="center">

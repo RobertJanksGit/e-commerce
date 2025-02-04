@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -8,30 +8,46 @@ import {
   Button,
   Typography,
   Box,
+  Alert,
+  CircularProgress,
 } from "@mui/material";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState("");
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp, error, clearError, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/");
+    }
+    return () => clearError();
+  }, [user, navigate, clearError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setValidationError("");
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    if (password.length < 6) {
+      setValidationError("Password must be at least 6 characters long");
       return;
     }
 
+    if (password !== confirmPassword) {
+      setValidationError("Passwords do not match");
+      return;
+    }
+
+    setIsSubmitting(true);
     try {
       await signUp(email, password);
       navigate("/");
-    } catch (error) {
-      setError("Failed to create an account");
+    } catch (err) {
+      setIsSubmitting(false);
     }
   };
 
@@ -42,10 +58,10 @@ const Signup = () => {
           <Typography variant="h4" component="h1" gutterBottom align="center">
             Sign Up
           </Typography>
-          {error && (
-            <Typography color="error" align="center" sx={{ mb: 2 }}>
-              {error}
-            </Typography>
+          {(error || validationError) && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error || validationError}
+            </Alert>
           )}
           <form onSubmit={handleSubmit}>
             <TextField
@@ -56,6 +72,7 @@ const Signup = () => {
               onChange={(e) => setEmail(e.target.value)}
               margin="normal"
               required
+              disabled={isSubmitting}
             />
             <TextField
               fullWidth
@@ -65,6 +82,8 @@ const Signup = () => {
               onChange={(e) => setPassword(e.target.value)}
               margin="normal"
               required
+              disabled={isSubmitting}
+              helperText="Password must be at least 6 characters long"
             />
             <TextField
               fullWidth
@@ -74,14 +93,16 @@ const Signup = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               margin="normal"
               required
+              disabled={isSubmitting}
             />
             <Button
               type="submit"
               fullWidth
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
+              disabled={isSubmitting}
             >
-              Sign Up
+              {isSubmitting ? <CircularProgress size={24} /> : "Sign Up"}
             </Button>
           </form>
           <Typography align="center">

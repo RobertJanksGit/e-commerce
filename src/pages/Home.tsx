@@ -1,127 +1,146 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useCart } from "../context/CartContext";
+import { fetchProducts, Product } from "../services/api";
 import {
   Container,
   Grid,
   Card,
-  CardMedia,
   CardContent,
+  CardMedia,
   Typography,
-  CardActions,
   Button,
   Rating,
-  Snackbar,
+  Box,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase";
-import { useCart, CartItem } from "../context/CartContext";
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  imageUrl: string;
-  rating: number;
-}
 
 const Home = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const { addItem } = useCart();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { addToCart } = useCart();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const querySnapshot = await getDocs(collection(db, "products"));
-      const productsData = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Product[];
-      setProducts(productsData);
+    const loadProducts = async () => {
+      try {
+        const data = await fetchProducts();
+        setProducts(data);
+        setError(null);
+      } catch (error) {
+        console.error("Error loading products:", error);
+        setError("Failed to load products. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchProducts();
+    loadProducts();
   }, []);
 
-  const handleAddToCart = (product: Product) => {
-    const cartItem: CartItem = {
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      quantity: 1,
-      imageUrl: product.imageUrl,
-      description: product.description,
-    };
-    addItem(cartItem);
-    setOpenSnackbar(true);
-  };
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "60vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-  // Temporary sample products for development
-  const sampleProducts: Product[] = [
-    {
-      id: "1",
-      name: "Wireless Headphones",
-      price: 99.99,
-      description: "High-quality wireless headphones with noise cancellation",
-      imageUrl: "https://via.placeholder.com/200",
-      rating: 4.5,
-    },
-    {
-      id: "2",
-      name: "Smartphone",
-      price: 699.99,
-      description: "Latest model smartphone with advanced features",
-      imageUrl: "https://via.placeholder.com/200",
-      rating: 4.8,
-    },
-    // Add more sample products as needed
-  ];
+  if (error) {
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
 
   return (
-    <Container sx={{ py: 8 }}>
+    <Container sx={{ py: 4 }}>
       <Grid container spacing={4}>
-        {(products.length > 0 ? products : sampleProducts).map((product) => (
-          <Grid item key={product.id} xs={12} sm={6} md={4}>
+        {products.map((product) => (
+          <Grid item key={product.id} xs={12} sm={6} md={4} lg={3}>
             <Card
-              sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+              sx={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                transition: "transform 0.2s",
+                "&:hover": {
+                  transform: "scale(1.02)",
+                },
+              }}
             >
               <CardMedia
                 component="img"
-                sx={{ height: 200, objectFit: "contain", p: 2 }}
-                image={product.imageUrl}
-                alt={product.name}
+                sx={{
+                  pt: "56.25%", // 16:9 aspect ratio
+                  objectFit: "contain",
+                  bgcolor: "white",
+                }}
+                image={product.image}
+                alt={product.title}
               />
               <CardContent sx={{ flexGrow: 1 }}>
-                <Typography gutterBottom variant="h5" component="h2">
-                  {product.name}
+                <Typography gutterBottom variant="h6" component="h2" noWrap>
+                  {product.title}
                 </Typography>
-                <Typography color="text.secondary" paragraph>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
                   {product.description}
                 </Typography>
-                <Typography variant="h6" color="primary">
-                  ${product.price.toFixed(2)}
-                </Typography>
-                <Rating value={product.rating} precision={0.5} readOnly />
-              </CardContent>
-              <CardActions>
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Typography variant="h6" color="primary">
+                    ${product.price}
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <Rating
+                      value={product.rating.rate}
+                      precision={0.1}
+                      size="small"
+                      readOnly
+                    />
+                    <Typography variant="body2" sx={{ ml: 1 }}>
+                      ({product.rating.count})
+                    </Typography>
+                  </Box>
+                </Box>
                 <Button
-                  size="small"
-                  variant="contained"
                   fullWidth
-                  onClick={() => handleAddToCart(product)}
+                  variant="contained"
+                  sx={{ mt: 2 }}
+                  onClick={() => addToCart(product)}
                 >
                   Add to Cart
                 </Button>
-              </CardActions>
+              </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={3000}
-        onClose={() => setOpenSnackbar(false)}
-        message="Item added to cart"
-      />
     </Container>
   );
 };
