@@ -86,7 +86,7 @@ const Navbar = () => {
           </Typography>
         </Link>
 
-        <Box sx={{ flexGrow: 1, maxWidth: 600 }}>
+        <Box sx={{ flexGrow: 1, maxWidth: 600, mx: 2 }}>
           <Autocomplete
             freeSolo
             options={suggestions}
@@ -180,10 +180,10 @@ const Navbar = () => {
           />
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, ml: "auto" }}>
           {user ? (
             <>
-              <Typography variant="body1">
+              <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
                 Hello, {user.email?.split("@")[0]}
               </Typography>
               <Link to="/cart" style={{ color: "white" }}>
