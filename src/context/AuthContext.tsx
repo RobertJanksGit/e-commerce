@@ -12,7 +12,6 @@ import {
   onAuthStateChanged,
   User,
   UserCredential,
-  updateProfile,
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../firebase";
