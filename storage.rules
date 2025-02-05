@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow public read access to all files
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+    
+    // Profile images specific rules
+    match /profile-images/{userId}/{filename} {
+      allow read: if true;  // Allow public read of profile images
+      allow create: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow update: if request.auth != null 
+        && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+  }
+} 

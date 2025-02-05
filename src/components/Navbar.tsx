@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { getSearchSuggestions, Product } from "../services/api";
+import { getUserProfile, type UserProfile } from "../services/userProfile";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import SearchIcon from "@mui/icons-material/Search";
 import {
@@ -28,6 +29,21 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (user) {
+        try {
+          const profile = await getUserProfile(user.uid);
+          setUserProfile(profile);
+        } catch (error) {
+          console.error("Error loading user profile:", error);
+        }
+      }
+    };
+    loadUserProfile();
+  }, [user]);
 
   useEffect(() => {
     const getSuggestions = async () => {
@@ -195,6 +211,7 @@ const Navbar = () => {
                 }}
               >
                 <Avatar
+                  src={userProfile?.photoURL}
                   sx={{
                     width: 32,
                     height: 32,
@@ -202,10 +219,11 @@ const Navbar = () => {
                     fontSize: "1rem",
                   }}
                 >
-                  {user.email?.[0].toUpperCase()}
+                  {userProfile?.displayName?.[0]?.toUpperCase() ||
+                    user.email?.[0].toUpperCase()}
                 </Avatar>
                 <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
-                  {user.email?.split("@")[0]}
+                  {userProfile?.displayName || user.email?.split("@")[0]}
                 </Typography>
               </Link>
               <Link to="/cart" style={{ color: "white" }}>

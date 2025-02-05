@@ -1,4 +1,4 @@
-import { db } from "../firebase";
+import { db, storage } from "../firebase";
 import {
   doc,
   getDoc,
@@ -9,6 +9,12 @@ import {
   getDocs,
   orderBy,
 } from "firebase/firestore";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 import { auth } from "../firebase";
 
 export interface UserProfile {
@@ -16,6 +22,7 @@ export interface UserProfile {
   email: string;
   displayName?: string;
   phoneNumber?: string;
+  photoURL?: string;
   address?: {
     street?: string;
     city?: string;
@@ -203,5 +210,74 @@ export const updateShippingAddress = async (
   } catch (error) {
     console.error("Error updating shipping address:", error);
     throw error;
+  }
+};
+
+export const uploadProfileImage = async (
+  uid: string,
+  file: File
+): Promise<string> => {
+  try {
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      throw new Error("Please upload an image file (JPEG, PNG, etc.)");
+    }
+
+    // Validate file size (5MB max)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+    if (file.size > MAX_SIZE) {
+      throw new Error("Image size should be less than 5MB");
+    }
+
+    // Get the file extension
+    const fileExtension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const timestamp = Date.now();
+    const filename = `profile-${timestamp}.${fileExtension}`;
+    const imagePath = `profile-images/${uid}/${filename}`;
+
+    // Delete existing profile image if it exists
+    const profile = await getUserProfile(uid);
+    if (profile?.photoURL) {
+      try {
+        // Extract the old image path from the URL
+        const oldImageUrl = new URL(profile.photoURL);
+        const oldImagePath = decodeURIComponent(
+          oldImageUrl.pathname.split("/o/")[1].split("?")[0]
+        );
+        const oldImageRef = ref(storage, oldImagePath);
+        await deleteObject(oldImageRef);
+      } catch (error) {
+        console.error("Error deleting old profile image:", error);
+        // Continue with upload even if delete fails
+      }
+    }
+
+    // Upload new image
+    const imageRef = ref(storage, imagePath);
+    const metadata = {
+      contentType: file.type,
+      customMetadata: {
+        uploadedAt: new Date().toISOString(),
+        originalName: file.name,
+        userId: uid,
+      },
+    };
+
+    // Upload the file
+    await uploadBytes(imageRef, file, metadata);
+    const downloadURL = await getDownloadURL(imageRef);
+
+    // Update profile with new photo URL
+    await updateUserProfile(uid, {
+      photoURL: downloadURL,
+    });
+
+    return downloadURL;
+  } catch (error) {
+    console.error("Error uploading profile image:", error);
+    if (error instanceof Error) {
+      throw new Error(`Failed to upload profile image: ${error.message}`);
+    }
+    throw new Error("Failed to upload profile image");
   }
 };

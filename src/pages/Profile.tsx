@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import {
   Container,
@@ -24,6 +24,7 @@ import {
   IconButton,
   FormControlLabel,
   Switch,
+  Badge,
 } from "@mui/material";
 import { updateEmail, updatePassword } from "firebase/auth";
 import {
@@ -32,11 +33,13 @@ import {
   getUserOrders,
   addShippingAddress,
   updateShippingAddress,
+  uploadProfileImage,
   type UserProfile,
   type Order,
 } from "../services/userProfile";
 import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
 
 interface AddressFormData {
   name: string;
@@ -78,6 +81,8 @@ const Profile = () => {
     country: "",
     isDefault: false,
   });
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load profile and orders data
   useEffect(() => {
@@ -206,6 +211,31 @@ const Profile = () => {
     setAddressDialogOpen(true);
   };
 
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      await uploadProfileImage(user.uid, file);
+      const updatedProfile = await getUserProfile(user.uid);
+      setProfile(updatedProfile);
+      setSuccess("Profile image updated successfully!");
+    } catch (err) {
+      const error = err as Error;
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
+  };
+
   if (loading && !profile) {
     return (
       <Box
@@ -225,16 +255,45 @@ const Profile = () => {
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Paper sx={{ p: 3 }}>
         <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar
-            sx={{
-              width: 64,
-              height: 64,
-              bgcolor: "primary.main",
-              fontSize: "2rem",
-            }}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageUpload}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+          <Badge
+            overlap="circular"
+            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+            badgeContent={
+              <IconButton
+                size="small"
+                onClick={triggerImageUpload}
+                sx={{
+                  bgcolor: "primary.main",
+                  color: "white",
+                  "&:hover": { bgcolor: "primary.dark" },
+                }}
+              >
+                <CameraAltIcon fontSize="small" />
+              </IconButton>
+            }
           >
-            {displayName?.[0]?.toUpperCase() || user?.email?.[0].toUpperCase()}
-          </Avatar>
+            <Avatar
+              src={profile?.photoURL}
+              sx={{
+                width: 80,
+                height: 80,
+                bgcolor: "primary.main",
+                fontSize: "2rem",
+                cursor: "pointer",
+              }}
+              onClick={triggerImageUpload}
+            >
+              {displayName?.[0]?.toUpperCase() ||
+                user?.email?.[0].toUpperCase()}
+            </Avatar>
+          </Badge>
           <Box>
             <Typography variant="h5" gutterBottom>
               {displayName || "My Profile"}
