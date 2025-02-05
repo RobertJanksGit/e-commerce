@@ -6,6 +6,7 @@ import { getSearchSuggestions, Product } from "../services/api";
 import { getUserProfile, type UserProfile } from "../services/userProfile";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import SearchIcon from "@mui/icons-material/Search";
+import MenuIcon from "@mui/icons-material/Menu";
 import {
   AppBar,
   Toolbar,
@@ -20,7 +21,19 @@ import {
   TextField,
   Paper,
   Avatar,
+  Drawer,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
+  useTheme,
+  useMediaQuery,
+  Divider,
 } from "@mui/material";
+import PersonIcon from "@mui/icons-material/Person";
+import LogoutIcon from "@mui/icons-material/Logout";
+import LoginIcon from "@mui/icons-material/Login";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 
 const Navbar = () => {
   const { user, logout, loading } = useAuth();
@@ -30,6 +43,10 @@ const Navbar = () => {
   const [suggestions, setSuggestions] = useState<Product[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -79,10 +96,84 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      setMobileMenuOpen(false);
     } catch (error) {
       console.error("Error logging out:", error);
     }
   };
+
+  const handleMobileMenuClick = (path: string) => {
+    navigate(path);
+    setMobileMenuOpen(false);
+  };
+
+  const mobileMenu = (
+    <Drawer
+      anchor="right"
+      open={mobileMenuOpen}
+      onClose={() => setMobileMenuOpen(false)}
+    >
+      <Box sx={{ width: 250, pt: 2 }}>
+        {user ? (
+          <>
+            <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 2 }}>
+              <Avatar
+                src={userProfile?.photoURL}
+                sx={{ width: 40, height: 40 }}
+              >
+                {userProfile?.displayName?.[0]?.toUpperCase() ||
+                  user.email?.[0].toUpperCase()}
+              </Avatar>
+              <Typography noWrap>
+                {userProfile?.displayName || user.email?.split("@")[0]}
+              </Typography>
+            </Box>
+            <Divider />
+            <List>
+              <ListItem
+                button
+                onClick={() => handleMobileMenuClick("/profile")}
+              >
+                <ListItemIcon>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText primary="Profile" />
+              </ListItem>
+              <ListItem button onClick={() => handleMobileMenuClick("/cart")}>
+                <ListItemIcon>
+                  <Badge badgeContent={getItemCount()} color="secondary">
+                    <ShoppingCartIcon />
+                  </Badge>
+                </ListItemIcon>
+                <ListItemText primary="Cart" />
+              </ListItem>
+              <ListItem button onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText primary="Logout" />
+              </ListItem>
+            </List>
+          </>
+        ) : (
+          <List>
+            <ListItem button onClick={() => handleMobileMenuClick("/login")}>
+              <ListItemIcon>
+                <LoginIcon />
+              </ListItemIcon>
+              <ListItemText primary="Login" />
+            </ListItem>
+            <ListItem button onClick={() => handleMobileMenuClick("/signup")}>
+              <ListItemIcon>
+                <PersonAddIcon />
+              </ListItemIcon>
+              <ListItemText primary="Sign Up" />
+            </ListItem>
+          </List>
+        )}
+      </Box>
+    </Drawer>
+  );
 
   if (loading) {
     return (
@@ -96,14 +187,29 @@ const Navbar = () => {
 
   return (
     <AppBar position="static">
-      <Toolbar sx={{ gap: 2 }}>
+      <Toolbar sx={{ gap: { xs: 1, md: 2 } }}>
         <Link to="/" style={{ textDecoration: "none", color: "white" }}>
-          <Typography variant="h6" component="div" sx={{ flexShrink: 0 }}>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              flexShrink: 0,
+              fontSize: { xs: "1.1rem", sm: "1.25rem" },
+            }}
+          >
             E-Commerce
           </Typography>
         </Link>
 
-        <Box sx={{ flexGrow: 1, maxWidth: 600, mx: 2 }}>
+        <Box
+          sx={{
+            flexGrow: 1,
+            maxWidth: { sm: "100%", md: 600 },
+            mx: { xs: 0, md: 2 },
+            order: { xs: 3, md: 2 },
+            width: { xs: "100%", md: "auto" },
+          }}
+        >
           <Autocomplete
             freeSolo
             options={suggestions}
@@ -197,58 +303,96 @@ const Navbar = () => {
           />
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, ml: "auto" }}>
-          {user ? (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 1, md: 2 },
+            ml: "auto",
+            order: { xs: 2, md: 3 },
+          }}
+        >
+          {isMobile ? (
             <>
-              <Link
-                to="/profile"
-                style={{
-                  textDecoration: "none",
-                  color: "white",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
+              {user && (
+                <Link to="/cart" style={{ color: "white" }}>
+                  <IconButton color="inherit" size="small">
+                    <Badge badgeContent={getItemCount()} color="secondary">
+                      <ShoppingCartIcon />
+                    </Badge>
+                  </IconButton>
+                </Link>
+              )}
+              <IconButton
+                color="inherit"
+                onClick={() => setMobileMenuOpen(true)}
+                size="small"
               >
-                <Avatar
-                  src={userProfile?.photoURL}
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    bgcolor: "secondary.main",
-                    fontSize: "1rem",
-                  }}
-                >
-                  {userProfile?.displayName?.[0]?.toUpperCase() ||
-                    user.email?.[0].toUpperCase()}
-                </Avatar>
-                <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
-                  {userProfile?.displayName || user.email?.split("@")[0]}
-                </Typography>
-              </Link>
-              <Link to="/cart" style={{ color: "white" }}>
-                <IconButton color="inherit">
-                  <Badge badgeContent={getItemCount()} color="secondary">
-                    <ShoppingCartIcon />
-                  </Badge>
-                </IconButton>
-              </Link>
-              <Button color="inherit" onClick={handleLogout}>
-                Logout
-              </Button>
+                <MenuIcon />
+              </IconButton>
             </>
           ) : (
             <>
-              <Link to="/login" style={{ textDecoration: "none" }}>
-                <Button color="inherit">Login</Button>
-              </Link>
-              <Link to="/signup" style={{ textDecoration: "none" }}>
-                <Button color="inherit">Sign Up</Button>
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    to="/profile"
+                    style={{
+                      textDecoration: "none",
+                      color: "white",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                    }}
+                  >
+                    <Avatar
+                      src={userProfile?.photoURL}
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        bgcolor: "secondary.main",
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {userProfile?.displayName?.[0]?.toUpperCase() ||
+                        user.email?.[0].toUpperCase()}
+                    </Avatar>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        whiteSpace: "nowrap",
+                        display: { xs: "none", lg: "block" },
+                      }}
+                    >
+                      {userProfile?.displayName || user.email?.split("@")[0]}
+                    </Typography>
+                  </Link>
+                  <Link to="/cart" style={{ color: "white" }}>
+                    <IconButton color="inherit">
+                      <Badge badgeContent={getItemCount()} color="secondary">
+                        <ShoppingCartIcon />
+                      </Badge>
+                    </IconButton>
+                  </Link>
+                  <Button color="inherit" onClick={handleLogout}>
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" style={{ textDecoration: "none" }}>
+                    <Button color="inherit">Login</Button>
+                  </Link>
+                  <Link to="/signup" style={{ textDecoration: "none" }}>
+                    <Button color="inherit">Sign Up</Button>
+                  </Link>
+                </>
+              )}
             </>
           )}
         </Box>
       </Toolbar>
+      {mobileMenu}
     </AppBar>
   );
 };
