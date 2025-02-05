@@ -18,6 +18,7 @@ import {
   Autocomplete,
   TextField,
   Paper,
+  Avatar,
 } from "@mui/material";
 
 const Navbar = () => {
@@ -183,9 +184,30 @@ const Navbar = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2, ml: "auto" }}>
           {user ? (
             <>
-              <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
-                Hello, {user.email?.split("@")[0]}
-              </Typography>
+              <Link
+                to="/profile"
+                style={{
+                  textDecoration: "none",
+                  color: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    bgcolor: "secondary.main",
+                    fontSize: "1rem",
+                  }}
+                >
+                  {user.email?.[0].toUpperCase()}
+                </Avatar>
+                <Typography variant="body1" sx={{ whiteSpace: "nowrap" }}>
+                  {user.email?.split("@")[0]}
+                </Typography>
+              </Link>
               <Link to="/cart" style={{ color: "white" }}>
                 <IconButton color="inherit">
                   <Badge badgeContent={getItemCount()} color="secondary">

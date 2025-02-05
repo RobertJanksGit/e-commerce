@@ -90,13 +90,40 @@ The application is fully responsive and provides an optimal experience across:
 - Tablets
 - Mobile phones
 
+## 🔒 Security Setup
+
+1. **Environment Variables**:
+
+   - Copy `.env.example` to `.env`
+   - Fill in your Firebase configuration values
+   - Never commit the `.env` file
+   - Keep your Firebase API keys private
+
+2. **Firebase Security**:
+
+   - Enable Email/Password authentication in Firebase Console
+   - Deploy Firestore security rules using `firebase deploy --only firestore:rules`
+   - Set up appropriate Firebase project settings and restrictions
+
+3. **Data Protection**:
+   - User profiles are protected by Firebase Authentication
+   - Each user can only access their own data
+   - Orders are immutable once created
+   - Addresses are encrypted in transit
+
 ## ⚡ Getting Started
 
 1. Clone the repository
 2. Install dependencies: `npm install`
-3. Set up Firebase configuration
-4. Run development server: `npm run dev`
-5. Build for production: `npm run build`
+3. Copy `.env.example` to `.env` and fill in your Firebase configuration
+4. Set up Firebase:
+   - Create a new Firebase project
+   - Enable Authentication (Email/Password)
+   - Enable Firestore Database
+   - Deploy Firestore rules
+5. Run development server: `npm run dev`
+6. Build for production: `npm run build`
+7. Deploy: `firebase deploy`
 
 ## 🤝 Contributing
 

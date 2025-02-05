@@ -15,6 +15,7 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../firebase";
+import { createUserProfile } from "../services/userProfile";
 
 interface AuthContextType {
   user: User | null;
@@ -44,7 +45,14 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
 
   async function signUp(email: string, password: string) {
     try {
-      return await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      // Create user profile in Firestore after successful signup
+      await createUserProfile(userCredential.user.uid, email);
+      return userCredential;
     } catch (err) {
       const error = err as Error;
       setError(error.message);
