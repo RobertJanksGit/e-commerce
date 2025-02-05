@@ -10,6 +10,8 @@ import {
   Box,
   Grid,
   Divider,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
@@ -17,6 +19,8 @@ import RemoveIcon from "@mui/icons-material/Remove";
 
 const Cart = () => {
   const { items, removeFromCart, updateQuantity, getTotal } = useCart();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   if (items.length === 0) {
     return (
@@ -39,69 +43,94 @@ const Cart = () => {
             <Card key={item.id} sx={{ mb: 2 }}>
               <CardContent>
                 <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={3}>
+                  <Grid item xs={isMobile ? 4 : 3}>
                     <CardMedia
                       component="img"
                       sx={{
                         width: "100%",
-                        height: 100,
+                        height: isMobile ? 80 : 100,
                         objectFit: "contain",
                       }}
                       image={item.image}
                       alt={item.title}
                     />
                   </Grid>
-                  <Grid item xs={5}>
-                    <Typography variant="h6" gutterBottom>
-                      {item.title}
-                    </Typography>
+                  <Grid item xs={isMobile ? 8 : 5}>
                     <Typography
-                      variant="body2"
-                      color="text.secondary"
+                      variant={isMobile ? "subtitle1" : "h6"}
+                      gutterBottom
                       sx={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical",
+                        fontSize: isMobile ? "0.9rem" : undefined,
+                        mb: isMobile ? 0.5 : 1,
                       }}
                     >
-                      {item.description}
+                      {item.title}
                     </Typography>
+                    {!isMobile && (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {item.description}
+                      </Typography>
+                    )}
                   </Grid>
-                  <Grid item xs={2}>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Grid item xs={12} sm={2} sx={{ mt: isMobile ? 1 : 0 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: isMobile ? "flex-start" : "center",
+                      }}
+                    >
                       <IconButton
-                        size="small"
+                        size={isMobile ? "small" : "medium"}
                         onClick={() =>
                           updateQuantity(item.id, item.quantity - 1)
                         }
                       >
-                        <RemoveIcon />
+                        <RemoveIcon fontSize={isMobile ? "small" : "medium"} />
                       </IconButton>
                       <Typography sx={{ mx: 1 }}>{item.quantity}</Typography>
                       <IconButton
-                        size="small"
+                        size={isMobile ? "small" : "medium"}
                         onClick={() =>
                           updateQuantity(item.id, item.quantity + 1)
                         }
                       >
-                        <AddIcon />
+                        <AddIcon fontSize={isMobile ? "small" : "medium"} />
                       </IconButton>
                     </Box>
                   </Grid>
-                  <Grid item xs={1}>
-                    <Typography variant="subtitle1">
-                      ${(item.price * item.quantity).toFixed(2)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={1}>
-                    <IconButton
-                      color="error"
-                      onClick={() => removeFromCart(item.id)}
+                  <Grid item xs={12} sm={2}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: isMobile ? "space-between" : "center",
+                        mt: isMobile ? 1 : 0,
+                      }}
                     >
-                      <DeleteIcon />
-                    </IconButton>
+                      <Typography
+                        variant={isMobile ? "subtitle2" : "subtitle1"}
+                      >
+                        ${(item.price * item.quantity).toFixed(2)}
+                      </Typography>
+                      <IconButton
+                        color="error"
+                        onClick={() => removeFromCart(item.id)}
+                        size={isMobile ? "small" : "medium"}
+                      >
+                        <DeleteIcon fontSize={isMobile ? "small" : "medium"} />
+                      </IconButton>
+                    </Box>
                   </Grid>
                 </Grid>
               </CardContent>
@@ -109,7 +138,7 @@ const Cart = () => {
           ))}
         </Grid>
         <Grid item xs={12} md={4}>
-          <Card>
+          <Card sx={{ position: { md: "sticky" }, top: { md: 24 } }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Order Summary
