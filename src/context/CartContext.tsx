@@ -21,13 +21,15 @@ export function CartContextProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
   const addToCart = (product: Product) => {
+    if (product.stock === 0) return; // Don't add out of stock items
+
     setItems((currentItems) => {
       const existingItem = currentItems.find((item) => item.id === product.id);
       if (existingItem) {
+        // Don't exceed available stock
+        const newQuantity = Math.min(existingItem.quantity + 1, product.stock);
         return currentItems.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+          item.id === product.id ? { ...item, quantity: newQuantity } : item
         );
       }
       return [...currentItems, { ...product, quantity: 1 }];
@@ -45,11 +47,18 @@ export function CartContextProvider({ children }: { children: ReactNode }) {
       removeFromCart(productId);
       return;
     }
-    setItems((currentItems) =>
-      currentItems.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      )
-    );
+
+    setItems((currentItems) => {
+      const item = currentItems.find((item) => item.id === productId);
+      if (!item) return currentItems;
+
+      // Don't exceed available stock
+      const newQuantity = Math.min(quantity, item.stock);
+
+      return currentItems.map((item) =>
+        item.id === productId ? { ...item, quantity: newQuantity } : item
+      );
+    });
   };
 
   const clearCart = () => {
@@ -61,7 +70,12 @@ export function CartContextProvider({ children }: { children: ReactNode }) {
   };
 
   const getTotal = () => {
-    return items.reduce((total, item) => total + item.price * item.quantity, 0);
+    return items.reduce((total, item) => {
+      const price = item.discountPercentage
+        ? item.price * (1 - item.discountPercentage / 100)
+        : item.price;
+      return total + price * item.quantity;
+    }, 0);
   };
 
   const value = {

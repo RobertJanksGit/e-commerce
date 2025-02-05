@@ -32,6 +32,17 @@ const Cart = () => {
     );
   }
 
+  const getDiscountedPrice = (price: number, discountPercentage: number) => {
+    return price * (1 - discountPercentage / 100);
+  };
+
+  const calculateItemTotal = (item: (typeof items)[0]) => {
+    const price = item.discountPercentage
+      ? getDiscountedPrice(item.price, item.discountPercentage)
+      : item.price;
+    return price * item.quantity;
+  };
+
   return (
     <Container sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>
@@ -51,11 +62,14 @@ const Cart = () => {
                         height: isMobile ? 80 : 100,
                         objectFit: "contain",
                       }}
-                      image={item.image}
+                      image={item.thumbnail}
                       alt={item.title}
                     />
                   </Grid>
                   <Grid item xs={isMobile ? 8 : 5}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      {item.brand}
+                    </Typography>
                     <Typography
                       variant={isMobile ? "subtitle1" : "h6"}
                       gutterBottom
@@ -95,6 +109,7 @@ const Cart = () => {
                         onClick={() =>
                           updateQuantity(item.id, item.quantity - 1)
                         }
+                        disabled={item.quantity <= 1}
                       >
                         <RemoveIcon fontSize={isMobile ? "small" : "medium"} />
                       </IconButton>
@@ -104,6 +119,7 @@ const Cart = () => {
                         onClick={() =>
                           updateQuantity(item.id, item.quantity + 1)
                         }
+                        disabled={item.quantity >= item.stock}
                       >
                         <AddIcon fontSize={isMobile ? "small" : "medium"} />
                       </IconButton>
@@ -118,11 +134,31 @@ const Cart = () => {
                         mt: isMobile ? 1 : 0,
                       }}
                     >
-                      <Typography
-                        variant={isMobile ? "subtitle2" : "subtitle1"}
-                      >
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </Typography>
+                      <Box>
+                        {item.discountPercentage > 0 ? (
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              sx={{ textDecoration: "line-through" }}
+                            >
+                              ${(item.price * item.quantity).toFixed(2)}
+                            </Typography>
+                            <Typography
+                              variant={isMobile ? "subtitle2" : "subtitle1"}
+                              color="error.main"
+                            >
+                              ${calculateItemTotal(item).toFixed(2)}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography
+                            variant={isMobile ? "subtitle2" : "subtitle1"}
+                          >
+                            ${calculateItemTotal(item).toFixed(2)}
+                          </Typography>
+                        )}
+                      </Box>
                       <IconButton
                         color="error"
                         onClick={() => removeFromCart(item.id)}

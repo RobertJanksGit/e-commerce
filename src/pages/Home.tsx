@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useCart } from "../context/CartContext";
-import { fetchProducts, searchProducts, Product } from "../services/api";
+import {
+  fetchProducts,
+  searchProducts,
+  Product,
+  fetchProductsByCategory,
+} from "../services/api";
 import ProductFilters from "../components/ProductFilters";
 import {
   Container,
@@ -36,26 +41,44 @@ const Home = () => {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        let data = query ? await searchProducts(query) : await fetchProducts();
+        setError(null);
 
-        // Calculate price range from all products
+        let data;
+        if (query) {
+          data = await searchProducts(query);
+        } else if (category && category !== "all") {
+          data = await fetchProductsByCategory(category);
+        } else {
+          data = await fetchProducts();
+        }
+
+        if (!Array.isArray(data)) {
+          setProducts([]);
+          return;
+        }
+
+        if (data.length === 0) {
+          setProducts([]);
+          return;
+        }
+
+        // Calculate price range from all products before filtering
         if (data.length > 0) {
           const prices = data.map((p) => p.price);
-          setPriceRange({
+          const newPriceRange = {
             min: Math.floor(Math.min(...prices)),
             max: Math.ceil(Math.max(...prices)),
-          });
-        }
+          };
+          setPriceRange(newPriceRange);
 
-        // Apply category filter
-        if (category && category !== "all") {
-          data = data.filter((product) => product.category === category);
+          // Only apply price filter if it's explicitly set in the URL
+          if (searchParams.has("minPrice") || searchParams.has("maxPrice")) {
+            data = data.filter(
+              (product) =>
+                product.price >= minPrice && product.price <= maxPrice
+            );
+          }
         }
-
-        // Apply price filter
-        data = data.filter(
-          (product) => product.price >= minPrice && product.price <= maxPrice
-        );
 
         // Apply sorting
         switch (sort) {
@@ -66,7 +89,7 @@ const Home = () => {
             data.sort((a, b) => b.price - a.price);
             break;
           case "rating":
-            data.sort((a, b) => b.rating.rate - a.rating.rate);
+            data.sort((a, b) => b.rating - a.rating);
             break;
           default:
             // Keep original order
@@ -74,10 +97,9 @@ const Home = () => {
         }
 
         setProducts(data);
-        setError(null);
-      } catch (error) {
-        console.error("Error loading products:", error);
+      } catch {
         setError("Failed to load products. Please try again later.");
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -135,12 +157,30 @@ const Home = () => {
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
+                      position: "relative",
                       transition: "transform 0.2s",
                       "&:hover": {
                         transform: "scale(1.02)",
                       },
                     }}
                   >
+                    {product.discountPercentage > 0 && (
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          top: 12,
+                          right: 12,
+                          bgcolor: "error.main",
+                          color: "white",
+                          px: 1,
+                          py: 0.5,
+                          borderRadius: 1,
+                          zIndex: 1,
+                        }}
+                      >
+                        -{Math.round(product.discountPercentage)}% OFF
+                      </Box>
+                    )}
                     <CardMedia
                       component="img"
                       sx={{
@@ -148,10 +188,17 @@ const Home = () => {
                         objectFit: "contain",
                         bgcolor: "white",
                       }}
-                      image={product.image}
+                      image={product.thumbnail}
                       alt={product.title}
                     />
                     <CardContent sx={{ flexGrow: 1 }}>
+                      <Typography
+                        variant="subtitle2"
+                        color="text.secondary"
+                        gutterBottom
+                      >
+                        {product.brand}
+                      </Typography>
                       <Typography
                         gutterBottom
                         variant="h6"
@@ -169,40 +216,78 @@ const Home = () => {
                           display: "-webkit-box",
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
+                          mb: 2,
                         }}
                       >
                         {product.description}
                       </Typography>
                       <Box
                         sx={{
-                          mt: 2,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
+                          mb: 1,
                         }}
                       >
-                        <Typography variant="h6" color="primary">
-                          ${product.price}
-                        </Typography>
+                        <Box>
+                          {product.discountPercentage > 0 ? (
+                            <>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ textDecoration: "line-through" }}
+                              >
+                                ${product.price.toFixed(2)}
+                              </Typography>
+                              <Typography variant="h6" color="error.main">
+                                $
+                                {(
+                                  product.price *
+                                  (1 - product.discountPercentage / 100)
+                                ).toFixed(2)}
+                              </Typography>
+                            </>
+                          ) : (
+                            <Typography variant="h6" color="primary">
+                              ${product.price.toFixed(2)}
+                            </Typography>
+                          )}
+                        </Box>
                         <Box sx={{ display: "flex", alignItems: "center" }}>
                           <Rating
-                            value={product.rating.rate}
+                            value={product.rating}
                             precision={0.1}
                             size="small"
                             readOnly
                           />
-                          <Typography variant="body2" sx={{ ml: 1 }}>
-                            ({product.rating.count})
-                          </Typography>
                         </Box>
+                      </Box>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 2,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          color={
+                            product.stock > 0 ? "success.main" : "error.main"
+                          }
+                        >
+                          {product.stock > 0
+                            ? `${product.stock} in stock`
+                            : "Out of stock"}
+                        </Typography>
                       </Box>
                       <Button
                         fullWidth
                         variant="contained"
-                        sx={{ mt: 2 }}
                         onClick={() => addToCart(product)}
+                        disabled={product.stock === 0}
                       >
-                        Add to Cart
+                        {product.stock === 0 ? "Out of Stock" : "Add to Cart"}
                       </Button>
                     </CardContent>
                   </Card>

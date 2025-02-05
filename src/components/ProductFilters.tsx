@@ -24,9 +24,10 @@ const ProductFilters = ({ minPrice, maxPrice }: ProductFiltersProps) => {
   const location = useLocation();
   const [categories, setCategories] = useState<string[]>([]);
   const searchParams = new URLSearchParams(location.search);
+  const initialCategory = searchParams.get("category") || "all";
 
   const [filters, setFilters] = useState({
-    category: searchParams.get("category") || "all",
+    category: "all", // Start with "all" and update after categories load
     priceRange: [
       Number(searchParams.get("minPrice")) || minPrice,
       Number(searchParams.get("maxPrice")) || maxPrice,
@@ -41,14 +42,30 @@ const ProductFilters = ({ minPrice, maxPrice }: ProductFiltersProps) => {
     const loadCategories = async () => {
       try {
         const data = await fetchCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error("Error loading categories:", error);
+        // Filter out empty or invalid categories
+        const validCategories = data.filter(
+          (category) =>
+            category && typeof category === "string" && category.trim() !== ""
+        );
+        setCategories(validCategories);
+
+        // Only set the category from URL if it exists in the fetched categories
+        if (
+          initialCategory !== "all" &&
+          validCategories.includes(initialCategory)
+        ) {
+          setFilters((prev) => ({
+            ...prev,
+            category: initialCategory,
+          }));
+        }
+      } catch {
+        setCategories([]);
       }
     };
 
     loadCategories();
-  }, []);
+  }, [initialCategory]);
 
   // Update slider value when filters change (e.g., from URL)
   useEffect(() => {
@@ -85,10 +102,16 @@ const ProductFilters = ({ minPrice, maxPrice }: ProductFiltersProps) => {
     navigate({ search: params.toString() });
   };
 
+  const formatCategoryForDisplay = (category: string): string => {
+    if (!category || category === "all") return "All Categories";
+    return category; // Categories from API are already properly formatted
+  };
+
   const handleCategoryChange = (event: SelectChangeEvent) => {
+    const selectedCategory = event.target.value;
     const newFilters = {
       ...filters,
-      category: event.target.value,
+      category: selectedCategory,
     };
     setFilters(newFilters);
     updateURL(newFilters);
@@ -131,14 +154,16 @@ const ProductFilters = ({ minPrice, maxPrice }: ProductFiltersProps) => {
         <FormControl size="small">
           <InputLabel>Category</InputLabel>
           <Select
-            value={filters.category}
+            value={categories.length > 0 ? filters.category : "all"}
             label="Category"
             onChange={handleCategoryChange}
           >
-            <MenuItem value="all">All Categories</MenuItem>
+            <MenuItem key="all" value="all">
+              All Categories
+            </MenuItem>
             {categories.map((category) => (
               <MenuItem key={category} value={category}>
-                {category.charAt(0).toUpperCase() + category.slice(1)}
+                {formatCategoryForDisplay(category)}
               </MenuItem>
             ))}
           </Select>

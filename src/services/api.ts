@@ -4,14 +4,16 @@ export interface Product {
   price: number;
   description: string;
   category: string;
-  image: string;
-  rating: {
-    rate: number;
-    count: number;
-  };
+  brand: string;
+  thumbnail: string;
+  images: string[];
+  stock: number;
+  rating: number;
+  discountPercentage: number;
+  tags?: string[];
 }
 
-const API_URL = "https://fakestoreapi.com";
+const API_URL = "https://dummyjson.com";
 
 export const fetchProducts = async (): Promise<Product[]> => {
   try {
@@ -19,7 +21,8 @@ export const fetchProducts = async (): Promise<Product[]> => {
     if (!response.ok) {
       throw new Error("Failed to fetch products");
     }
-    return response.json();
+    const data = await response.json();
+    return data.products;
   } catch (error) {
     console.error("Error fetching products:", error);
     throw error;
@@ -43,11 +46,22 @@ export const fetchProductsByCategory = async (
   category: string
 ): Promise<Product[]> => {
   try {
-    const response = await fetch(`${API_URL}/products/category/${category}`);
+    console.log("Fetching products for category:", category);
+    const response = await fetch(
+      `${API_URL}/products/category/${category.toLowerCase()}`
+    );
     if (!response.ok) {
-      throw new Error("Failed to fetch products by category");
+      throw new Error(`Failed to fetch products for category: ${category}`);
     }
-    return response.json();
+    const data = await response.json();
+    console.log("Category products response:", data);
+
+    if (!data.products || !Array.isArray(data.products)) {
+      console.error("Invalid products response:", data);
+      return [];
+    }
+
+    return data.products;
   } catch (error) {
     console.error("Error fetching products by category:", error);
     throw error;
@@ -60,24 +74,36 @@ export const fetchCategories = async (): Promise<string[]> => {
     if (!response.ok) {
       throw new Error("Failed to fetch categories");
     }
-    return response.json();
+    const data = await response.json();
+
+    // Extract category names from the response
+    if (Array.isArray(data)) {
+      return data
+        .map((category) => {
+          if (typeof category === "string") return category;
+          if (typeof category === "object" && category !== null) {
+            return category.name || category.value || category.id || "";
+          }
+          return "";
+        })
+        .filter(Boolean);
+    }
+
+    return [];
   } catch (error) {
     console.error("Error fetching categories:", error);
-    throw error;
+    return [];
   }
 };
 
 export const searchProducts = async (query: string): Promise<Product[]> => {
   try {
-    const products = await fetchProducts();
-    const searchTerm = query.toLowerCase().trim();
-
-    return products.filter(
-      (product) =>
-        product.title.toLowerCase().includes(searchTerm) ||
-        product.description.toLowerCase().includes(searchTerm) ||
-        product.category.toLowerCase().includes(searchTerm)
-    );
+    const response = await fetch(`${API_URL}/products/search?q=${query}`);
+    if (!response.ok) {
+      throw new Error("Failed to search products");
+    }
+    const data = await response.json();
+    return data.products;
   } catch (error) {
     console.error("Error searching products:", error);
     throw error;
@@ -88,20 +114,16 @@ export const getSearchSuggestions = async (
   query: string
 ): Promise<Product[]> => {
   try {
-    const products = await fetchProducts();
-    const searchTerm = query.toLowerCase().trim();
+    if (!query.trim()) return [];
 
-    if (!searchTerm) return [];
-
-    // Get matches from title, category, and description
-    return products
-      .filter(
-        (product) =>
-          product.title.toLowerCase().includes(searchTerm) ||
-          product.category.toLowerCase().includes(searchTerm) ||
-          product.description.toLowerCase().includes(searchTerm)
-      )
-      .slice(0, 5); // Limit to 5 suggestions
+    const response = await fetch(
+      `${API_URL}/products/search?q=${query}&limit=5`
+    );
+    if (!response.ok) {
+      throw new Error("Failed to get search suggestions");
+    }
+    const data = await response.json();
+    return data.products;
   } catch (error) {
     console.error("Error getting search suggestions:", error);
     return [];
