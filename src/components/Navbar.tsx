@@ -102,6 +102,7 @@ const Navbar = () => {
     }
   };
 
+  // Handle mobile menu click
   const handleMobileMenuClick = (path: string) => {
     navigate(path);
     setMobileMenuOpen(false);
